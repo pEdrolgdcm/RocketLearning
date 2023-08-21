@@ -1,0 +1,893 @@
+﻿@inject DataContext _context
+@using RocketLearning.Controllers
+@{
+    ViewData["Title"] = "Exibir Vídeo";
+    var Coments = _context.Comentarios.ToList();
+    bool erroC = Convert.ToBoolean(TempData["erroComentario"] ?? false);
+}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Video</title>
+        <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <link rel="stylesheet" href="path/to/plyr.css">
+    </head>
+<body>
+    <!-- Inicio Player Video-->
+
+    <div class="video-container">
+        <div id="player" data-plyr-provider="youtube" data-plyr-embed-id="@ViewBag.VideoId"></div>    
+    </div>
+
+    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const player = new Plyr('#player', {
+                seekTime: 0.5, //Tempo de busca personalizado
+                autoplay: true, // Ativar o autoplay
+                controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'pip', 'airplay', 'fullscreen'], // Definir os controles visíveis
+                quality: {
+                    default: 720, 
+                    options: [720, 480, 360] // Definir opções de qualidade
+                },
+                youtube: { 
+                    autoplay: 0,
+                    controls: 0,
+                    statechange: 1,
+                    autohide: 2,
+                    border: 0,
+                    iv_load_policy: 3,
+                    modestbranding: 1,
+                    iv_load_policy: 3
+                }
+            });
+
+            player.on('timeupdate', (event) => {
+                const currentTime = event.detail.plyr.currentTime;
+                const duration = event.detail.plyr.duration;
+                const remainingTime = duration - currentTime;
+
+                if (remainingTime <= 0.5) {
+                    player.pause();
+                    player.currentTime = 0;
+                }
+            });
+
+
+        });
+
+    </script>
+
+    <style>
+        body {
+            background-color: #292b2f;
+            margin-top: 10vh;
+        }
+
+        .video-container {
+            width:800px;
+            height:500px;
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            border-radius: .5rem;
+            margin:0 auto;
+        }
+
+        .plyr{
+            border-radius:.5rem;
+            overflow:hidden;
+        }
+
+        :root{
+            --plyr-color-main: #1eb9b9;
+        }
+
+        .plyr--hover .plyr__controls,
+        .plyr--hover .plyr__controls button.plyr__control--overlaid,
+        .plyr--hover .plyr__controls input[type="range"] {
+            color: #1eb9b9; 
+        }
+
+        .plyr--video .plyr__play-large path 
+        {
+            fill: #1eb9b9; 
+            background-color: #1eb9b9;
+        }
+
+        .plyr--video .plyr__time--current,
+        .plyr--video .plyr__time--duration 
+        {
+            color: white; 
+            font-size: 14px; 
+            font-family: Helvetica, sans-serif;
+        }
+
+        .plyr__controls .plyr__progress .plyr__tooltip,
+        .plyr__controls .plyr__progress input[type="range"]::-webkit-slider-thumb,
+        .plyr__controls .plyr__progress input[type="range"]::-moz-range-thumb,
+        .plyr__controls .plyr__progress input[type="range"]::-ms-thumb {
+            background-color: #1eb9b9; 
+        }
+    </style>
+    <!-- Final Player Video-->
+
+    
+    <!-- INICIO COMENTARIOS-->
+    <div class="row" id="comment-list">
+
+        <div class="_details_review">
+
+            <div class="section-title">
+                <h5>Comentários</h5>
+            </div>
+
+            @if(Coments != null && Coments.Count > 0)
+            {
+                @foreach (var comentario in Coments)
+                {
+                    if (comentario.VideoID == ViewBag.VideoId)
+                    {
+                         <div class="__review__item">
+                        <div class="__review__item__pic">
+                                <!--<img src="~/Resources/astronauta.gif" alt=""> -->
+                        </div>
+                        <div class="__review__item__text">
+                            <h6 class="conteiner-h6">@comentario.AutorNome - <span>@comentario.Data</span>
+                                    @if (comentario.AutorID == UsuarioController.IdUserAtual)
+                                    {
+                                        <form action="@Url.Action("Delete", "Comentario")" method="post" class="delete-form">
+                                            <a a asp-controller="Comentario" asp-action="Delete" class="delete-button">
+                                                <input style="display: none;" name="id" value="@comentario.ComentarioID" />
+                                                <span class="delete-button">
+                                                    <img src="~/Resources/icons8-excluir-24.png" class="imagem_excluir">
+                                                </span>
+                                            </a>
+                                        </form>
+                                    }
+                             </h6>
+                            <p>
+                                @comentario.Text
+                            </p>
+                        </div>
+                    </div>
+                    }                
+                }
+            }
+
+            
+
+            <div class="__details__form">
+                <div class="section-title">
+                    <h5>Seu Comentário</h5>
+                </div>
+                <form method="post" action="/Comentario/Create" id="comment-form">
+                    <textarea placeholder="Digite seu comentário" class="textComentario" name="textComentario"></textarea>
+                    <button type="submit"><i class="fa fa-location-arrow"></i> Publicar</button>
+                    <input type="hidden" name="idVideo" value="@ViewBag.VideoID" />
+                </form>
+            </div>
+        </div>
+    </div>
+    <!---FIM COMENTARIOS-->
+    @if (erroC == true)
+    {
+        <div class="mensagem-erro" id="erroCadastro" style="display: block">
+            Dados incorretos ou já estão sendo usados. Tente Novamente
+        </div>
+    }
+    else
+    {
+        <div class="mensagem-erro" id="erroCadastro" style="display: none">
+            Dados incorretos ou já estão sendo usados. Tente Novamente
+        </div>
+    }
+
+
+    <!-- inicio barra lateral  -->
+
+    <div class="sidebar close">
+        <div class="logo-details">
+            <img src="~/Resources/logo.png" alt="logo" class="imagem-logo">
+        </div>
+        <ul class="nav-links">
+
+            <li>
+                <a a asp-controller="Home" asp-action="PaginaInicial">
+                    <i class="sidebar-icons">
+                        <img src="~/Resources/icons8-home-page-24.png" alt="home-image" class="home-image">
+                    </i>
+                    <span class="link_name">Página Inicial</span>
+                </a>
+                <ul class="sub-menu blank">
+                    <li><a a asp-controller="Home" asp-action="PaginaInicial" class="link_name">Página Inicial</a></li>
+                </ul>
+            </li>
+
+
+            <li>
+                <div class="iocn-link">
+                    <a href="#">
+                        <i class="sidebar-icons">
+                            <img src="~/Resources/icons8-list-24.png" alt="categoria-image" class="categoria-image">
+                        </i>
+                        <span class="link_name">Categorias</span>
+                    </a>
+                    <i class='bx bxs-chevron-down arrow'></i>
+                </div>
+                <ul class="sub-menu">
+                    <li><a class="link_name" href="#">Categorias</a></li>
+                    <li><a href="#">Todos</a></li>
+                    <li><a href="#">Mais Vistos</a></li>
+                    <li><a href="#">Recentes</a></li>
+                </ul>
+            </li>
+
+            <li>
+                <a href="#">
+                    <i class="sidebar-icons">
+                        <img src="~/Resources/icons8-static-views-24.png" alt="meusVideos-image" class="meusVideos-image">
+                    </i>
+                    <span class="link_name">Meus Vídeos</span>
+                </a>
+                <ul class="sub-menu blank">
+                    <li><a class="link_name" href="#">Meus Vídeos</a></li>
+                </ul>
+            </li>
+
+
+            <li>
+                <a href="#">
+                    <i class="sidebar-icons">
+                        <img src="~/Resources/icons8-time-machine-24.png" alt="historico-image" class="historico-image">
+                    </i>
+                    <span class="link_name">Histórico</span>
+                </a>
+                <ul class="sub-menu blank">
+                    <li><a class="link_name" href="#">Histórico</a></li>
+                </ul>
+            </li>
+
+            <li>
+                <a a asp-controller="Home" asp-action="Upload">
+                    <i class="sidebar-icons">
+                        <img src="~/Resources/icons8-fazer-upload-24.png" alt="config-image" class="config-image">
+                    </i>
+
+
+                    <span class="link_name">Upload</span>
+                </a>
+                <ul class="sub-menu blank">
+                    <li><a a asp-controller="Home" asp-action="Upload" class="link_name">Upload</a></li>
+                </ul>
+            </li>
+
+            <li>
+                <a a asp-controller="Home" asp-action="Sair">
+                    <i class="sidebar-icons">
+                        <img src="~/Resources/icons8-sair-24a.png" alt="config-image" class="config-image">
+                    </i>
+
+                    <span class="link_name">Sair</span>
+                </a>
+                <ul class="sub-menu blank">
+                    <li><a a asp-controller="Home" asp-action="Sair" class="link_name">Sair</a></li>
+                </ul>
+            </li>
+            <li>
+
+                <a a asp-controller="Perfil" asp-action="Perfil">
+                    <div class="profile-details">
+                        <div class="profile-content">
+
+                            @if (PerfilController.fotoUser == null || string.IsNullOrEmpty(PerfilController.fotoUser.ToString()))
+                            {
+                                <img class="image" src="~/Resources/icons8-user-default-96-cor2.png" alt="perfil-photo" />
+                            }
+                            else
+                            {
+                                @if (PerfilController.tipoImagem.ToString().ToLower() == ".jpeg")
+                                {
+                                    <img class="image" src="data:image/jpeg;base64,@PerfilController.fotoUser" alt="perfil-photo" />
+                                }
+                                else if (PerfilController.tipoImagem.ToString().ToLower() == ".png")
+                                {
+                                    <img class="image" src="data:image/png;base64,@PerfilController.fotoUser" alt="perfil-photo" />
+                                }
+                                else if (PerfilController.tipoImagem.ToString().ToLower() == ".svg")
+                                {
+                                    <img class="image" src="data:image/svg;base64,@PerfilController.fotoUser" alt="perfil-photo" />
+                                }
+                                else if (PerfilController.tipoImagem.ToString().ToLower() == ".jpg")
+                                {
+                                    <img class="image" src="data:image/jpg;base64,@PerfilController.fotoUser" alt="perfil-photo" />
+                                }
+                                else
+                                {
+                                    <img class="image" src="~/Resources/icons8-user-default-96-cor2.png" alt="perfil-photo" />
+                                }
+                            }
+
+                        </div>
+                    </div>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Fim barra lateral -->
+
+
+    <style>
+
+        /* inicio sidebar */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Helvetica, sans-serif;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 260px;
+            background: #202225;
+            z-index: 100;
+            transition: all 0.5s ease;
+        }
+
+            .sidebar.close {
+                width: 78px;
+            }
+
+        .imagem-logo {
+            height: 60%;
+            width: 60%;
+            margin-left: 1vw;
+            margin-top: 2.5vh;
+        }
+
+        .sidebar-icons {
+            margin-left: -2px;
+            margin-top: 5px;
+        }
+
+        .sidebar .nav-links {
+            height: 100%;
+            padding: 30px 0 150px 0;
+            overflow: auto;
+        }
+
+        .sidebar.close .nav-links {
+            overflow: visible;
+        }
+
+        .sidebar .nav-links::-webkit-scrollbar {
+            display: none;
+        }
+
+        .sidebar .nav-links li {
+            position: relative;
+            list-style: none;
+            transition: all 0.4s ease;
+        }
+
+            .sidebar .nav-links li:hover {
+                background: #1b1b1b;
+            }
+
+            .sidebar .nav-links li .iocn-link {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+        .sidebar.close .nav-links li .iocn-link {
+            display: block
+        }
+
+        .sidebar .nav-links li i {
+            height: 50px;
+            min-width: 78px;
+            text-align: center;
+            line-height: 50px;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar.close .nav-links i.arrow {
+            display: none;
+        }
+
+        .sidebar .nav-links li a {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .sidebar.close .nav-links li a .link_name {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .sidebar .nav-links li .sub-menu {
+            padding: 6px 6px 14px 80px;
+            margin-top: -10px;
+            background: #1b1b1b;
+            display: none;
+        }
+
+        .sidebar .nav-links li.showMenu .sub-menu {
+            display: block;
+        }
+
+        .sidebar .nav-links li .sub-menu a {
+            color: #fff;
+            font-size: 15px;
+            padding: 5px 0;
+            white-space: nowrap;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+        }
+
+            .sidebar .nav-links li .sub-menu a:hover {
+                opacity: 1;
+            }
+
+        .sidebar.close .nav-links li .sub-menu {
+            position: absolute;
+            left: 100%;
+            top: -10px;
+            margin-top: 0;
+            padding: 10px 20px;
+            border-radius: 0 6px 6px 0;
+            opacity: 0;
+            display: block;
+            pointer-events: none;
+            transition: 0s;
+        }
+
+        .sidebar.close .nav-links li:hover .sub-menu {
+            top: 0;
+            opacity: 1;
+            pointer-events: auto;
+            transition: all 0.4s ease;
+        }
+
+        .sidebar .nav-links li .sub-menu .link_name {
+            display: none;
+        }
+
+        .sidebar.close .nav-links li .sub-menu .link_name {
+            font-size: 18px;
+            opacity: 1;
+            display: block;
+        }
+
+        .sidebar .nav-links li .sub-menu.blank {
+            opacity: 1;
+            pointer-events: auto;
+            padding: 3px 20px 6px 16px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .sidebar .nav-links li:hover .sub-menu.blank {
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .profile-details:hover .profile_name {
+            visibility: visible;
+        }
+
+        .sidebar .profile-details {
+            position: fixed;
+            bottom: 0;
+            width: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #1b1b1b;
+            padding: 12px 0;
+            transition: all 0.5s ease;
+        }
+
+        .sidebar.close .profile-details {
+            background: none;
+        }
+
+        .sidebar .profile-details img {
+            height: 52px;
+            width: 52px;
+            object-fit: cover;
+            border-radius: 16px;
+            margin: 0 14px 0 12px;
+            background: #1b1b1b;
+            transition: all 0.5s ease;
+        }
+
+        .sidebar.close .profile-details img {
+            padding: 10px;
+        }
+
+        .sidebar .profile-details .profile_name,
+        .sidebar .profile-details .job {
+            color: #fff;
+            font-size: 18px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .sidebar.close .profile-details i,
+        .sidebar.close .profile-details .profile_name,
+        .sidebar.close .profile-details .job {
+            display: none;
+        }
+
+        .sidebar .profile-details.job {
+            font-size: 12px;
+        }
+
+        /* fim side bar */
+
+        /*Inicio comentarios*/
+
+        .row {
+            margin-top:30px;
+            display: -ms-flexbox;
+            display: flex;
+            -ms-flex-wrap: wrap;
+            flex-wrap: wrap;
+            margin-right: -15px;
+            margin-left: -15px;
+            position: relative;
+            width: 100%;
+            margin-left: 1vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-right: 15px;
+            padding-left: 15px;
+        }
+
+        ._details_review {
+            margin-bottom: 55px;
+        }
+
+
+        .__review__item {
+            overflow: auto;
+            max-width: 700px;
+            margin-bottom: 25px;
+        }
+
+        *, ::after, ::before {
+            box-sizing: border-box;
+        }
+
+        body {
+           height: 100%;
+            font-family: Helvetica, sans-serif;       
+            background: #292b2f;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #212529;
+            text-align: left;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden
+        }
+
+        .__review__item__pic {
+            float: left;
+            margin-right: 20px;
+            position: relative;
+        }
+
+            .__review__item__pic img {
+                height: 50px;
+                width: 50px;
+                border-radius: 50%;
+            }
+
+        img {
+            max-width: 100%;
+            vertical-align: middle;
+            border-style: none;
+            overflow: clip;
+        }
+
+        .__review__item__pic:before {
+            position: absolute;
+            right: -30px;
+            top: 15px;
+            border-top: 15px solid transparent;
+            border-left: 15px solid #202225;
+            content: "";
+            -webkit-transform: rotate(45deg);
+            -ms-transform: rotate(45deg);
+            transform: rotate(45deg);
+        }
+
+        .__review__item__text {
+            overflow: hidden;
+            background: #202225;
+            padding: 18px 30px 16px 20px;
+            border-radius: 10px;
+        }
+
+            .__review__item__text h6 {
+                color: #ffffff;
+                font-weight: 700;
+                margin-bottom: 10px;
+            }
+
+        h6 {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.2;
+        }
+
+        .conteiner-h6{
+            display:flex
+        }
+
+        .__review__item__text h6 span {
+            color: #b7b7b7;
+            font-weight: 400;
+        }
+
+        .delete-form{
+            margin-left: 5px;
+        }
+
+        .imagem_excluir {
+            width:20px;
+            height:20px;
+        }
+
+        .imagem_excluir:hover{
+                filter: brightness(0) invert(1);
+        }
+        
+        .__review__item__text p {
+            color: #b7b7b7;
+            line-height: 23px;
+            margin-bottom: 0;
+        }
+
+        p {
+            font-size: 15px;
+            margin: 0 0 15px 0;
+            display: block;
+            margin-block-start: 1em;
+            margin-block-end: 1em;
+            margin-inline-start: 0px;
+            margin-inline-end: 0px;
+        }
+
+        .delete-button{
+            border: 4px;
+            border-color: white;
+        }
+
+
+        /*  */
+        .section-title {
+            margin-bottom: 30px;
+        }
+
+            .section-title h5 {
+                color: #ffffff;
+                font-weight: 600;
+                line-height: 21px;
+                text-transform: uppercase;
+                padding-left: 20px;
+                position: relative;
+                font-family: Helvetica, sans-serif;
+            }
+
+                .section-title h5:after {
+                    position: absolute;
+                    left: 0;
+                    top: -6px;
+                    height: 32px;
+                    width: 4px;
+                    background: #1eb9b9;
+                    content: "";
+                }
+
+        .__details__form form textarea {
+            width: 100%;
+            font-size: 15px;
+            background-color: #202225;
+            color: #8f8989;
+            padding-left: 20px;
+            padding-top: 12px;
+            height: 110px;
+            border: none;
+            border-radius: 5px;
+            resize: none;
+            margin-bottom: 24px;
+        }
+
+        textarea {
+            overflow: auto;
+            resize: vertical;
+        }
+
+        textarea {
+            writing-mode: horizontal-tb !important;
+            text-rendering: auto;
+            letter-spacing: normal;
+            word-spacing: normal;
+            line-height: normal;
+            text-transform: none;
+            text-indent: 0px;
+            text-shadow: none;
+            display: inline-block;
+            text-align: start;
+            appearance: auto;
+            -webkit-rtl-ordering: logical;
+            resize: auto;
+            cursor: text;
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+            column-count: initial !important;
+            margin: 0em;
+            padding: 2px;
+        }
+
+        .__details__form form button {
+            font-size: 11px;
+            color: #ffffff;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: #1eb9b9;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+        }
+
+            .__details__form form button:hover {
+                background-color: #208888;
+            }
+
+        button, input {
+            overflow: visible;
+        }
+
+        /*Fim comentarios*/
+
+        /*INICIO MENSAGEM DE ERRO*/
+        .mensagem-erro {
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+            background-color: #eebec2;
+            border-color: #eebec2;
+            color: #92363f;
+            width: 200px;
+            padding: 2.5px 10px;
+            margin-bottom: 10rem;
+            border: 1px solid transparent;
+            border-radius: 0.25rem;
+        }
+
+            .mensagem-erro.visible {
+                display: block;
+            }
+
+            .mensagem-erro.hidden {
+                display: none;
+            }
+        /*FIM MENSAGEM DE ERRO*/
+
+    </style>
+  </body>
+</html>
+
+<!-- INICIO ATUALIZAR COMENTARIOS -->
+<script>
+    // Função para atualizar os comentários
+    function atualizarComentarios() {
+        $.ajax({
+            url: '/Comentario/GetAll', // URL para Att os comentários
+            method: 'GET',
+            success: function (response) {
+                // Limpar a lista de comentários
+                $('#comment-list .__review__item').not(':first-child').remove();
+
+                // Adicionar os novos comentários na lista
+                response.forEach(function (comment) {
+                    var commentElement = createCommentElement(comment);
+                    $('#comment-list').append(commentElement);
+                });
+            },
+            error: function () {
+                console.error('Erro ao obter os comentários.');
+            }
+        });
+    }
+
+    // Função para criar o elemento HTML de um comentário
+    function createCommentElement(commentData) {
+        var commentElement = $('<div class="__review__item"></div>');
+        commentElement.append('<div class="__review__item__pic"><img src="~/Resources/astronauta.gif" alt=""></div>');
+        commentElement.append('<div class="__review__item__text">' +
+            '<h6>' + commentData.autorNome + ' - <span>' + commentData.data + '</span></h6>' +
+            '<p>' + commentData.texto + '</p>' +
+            '</div>');
+        return commentElement;
+    }
+
+    // Atualiza os comentários ao carregar a página
+    $(document).ready(function () {
+        atualizarComentarios();
+    });
+
+    // Atualiza os comentários após o envio
+    $('#comment-form').submit(function (e) {
+        e.preventDefault();
+
+        // Envia o formulário via ajax
+        $.ajax({
+            url: $(this).attr('action'),
+            method: 'POST',
+            data: $(this).serialize(),
+            success: function () {
+                // Limpa o campo de texto do comentário
+                $('.textComentario').val('');
+
+                // Atualiza a lista de comentários
+                atualizarComentarios();
+                location.reload();
+            },
+            error: function () {
+                console.error('Erro ao enviar o comentário.');
+            }
+        });
+    });
+
+
+    /* Deletar comentário Reload*/
+
+    $(document).on('click', '.delete-button', function (e) {
+        e.preventDefault();
+
+        var form = $(this).closest('.delete-form');
+
+        // Envia a solicitação para excluir o comentário
+        $.ajax({
+            url: form.attr('action'),
+            method: 'POST',
+            data: form.serialize(),
+            success: function (response) {
+                if (response.success) {
+                    // Exclusão OK, atualiza a página
+                    location.reload();
+                } else {
+                    console.error('Erro ao excluir o comentário.');
+                }
+            },
+            error: function () {
+                console.error('Erro ao excluir o comentário.');
+            }
+        });
+    });
+
+</script>
+<!--- FIM ATUALIZAR COMENTARIOS -->
+
